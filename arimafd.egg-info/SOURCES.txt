@@ -1,0 +1,6 @@
+setup.py
+arimafd.egg-info/PKG-INFO
+arimafd.egg-info/SOURCES.txt
+arimafd.egg-info/dependency_links.txt
+arimafd.egg-info/not-zip-safe
+arimafd.egg-info/top_level.txt
