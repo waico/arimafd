@@ -1,6 +1,13 @@
+README.md
+setup.cfg
 setup.py
+arimafd/__init__.py
+arimafd/diff_integ.py
+arimafd/find_best_model.py
+arimafd/tanh.py
 arimafd.egg-info/PKG-INFO
 arimafd.egg-info/SOURCES.txt
 arimafd.egg-info/dependency_links.txt
 arimafd.egg-info/not-zip-safe
+arimafd.egg-info/requires.txt
 arimafd.egg-info/top_level.txt

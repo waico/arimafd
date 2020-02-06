@@ -1,32 +1,68 @@
-from statsmodels.tsa.arima_model import ARMA
-from statsmodels.stats.diagnostic import het_arch
 import numpy as np
-from numpy import linalg
 import pandas as pd
-from sympy import diff, symbols, sympify, Symbol, poly
 from sklearn.metrics import mean_absolute_error
 from statsmodels.tsa.ar_model import AR
 import statsmodels.api as sm
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from time import time
 
 
 class diff_integ:
     def __init__(self,seasons):
         """
-        seasons - list of lag including del trend
-        
-        Comments: 1) The algorithm is not optimized, in terms of adding new element in dictionary instead adding new dictionary
+        Differentiation and Integration Module
+
+        This class is needed to bring series to stationarity 
+        and perform inverse operation.
+
+
+        Parameters
+        ----------
+        Seasons : list of int
+            List of lags for differentiation. 
+
+
+        Returns
+        -------
+        self : object
+
+
+        Exampless
+        --------
+        >>> import arimafd as oa
+        >>> dif = oa.diff_integ([1])
+        >>> my_array=[1,2,3,4,5]
+        >>> dif.fit_transform(my_array)
+        array([1, 1, 1, 1])
+        >>> dif.transform(6)
+        1
+        >>> dif.inverse_transform(1)
+        7.0
         """
+        
+        #Comments: 1) The algorithm is not optimized, in terms of adding new element in dictionary instead adding new dictionary
         self.seasons=seasons
+       
     
 
             
     def fit_transform(self,data,return_diff=True):
         """
-        return array of difference time series
-        data - numpy
+        Fit the model and transform data according to the given training data.
+
+        Parameters
+        ----------
+        data : array-like, shape (n_samples,)
+            Training data, where n_samples is the number of samples
+
+        return_diff, optional (default=True)
+            Returns the differentiated array 
+
+        Returns
+        -------
+        If return_diff = True: data_new : array-like, shape (n_samples - sum_seasons,) 
+            where sum_seasons is sum of all lags
         """
+        
         self.data=np.array(data)
         data=np.array(data)
         if (len(data)-sum(self.seasons) <= sum(self.seasons)) or (len(self.seasons) < 1):
@@ -56,12 +92,26 @@ class diff_integ:
                 return self.Difference[len(self.seasons)-1]
            
     def transform(self,point):
+        """
+        Differentiation to the series data that were 
+        in method fit_transform and plus all the points that 
+        were in this method.
+        
+        Parameters
+        ----------
+        point : float
+            Add new point to self.data
+        
+        Returns
+        -------
+        Array-like, shape (n_samples + n*n_points - sum_seasons,) 
+        """
         return self.fit_transform(np.append(self.data,point),return_diff=True)[-1]
         
                 
     def inverse_fit_transform0(self):
         """
-        Return inital data for check
+        Return inital data for check class
         """
         self.Sum_insstead_Minuend[len(self.seasons)]=self.Difference[len(self.seasons)-1]
         j=0
@@ -72,10 +122,18 @@ class diff_integ:
 
     def inverse_transform(self,new_value):
         """
-        may return only 1 element
-
-        new_value = np.array !!!
-        """
+        Return last element after integration. 
+        (Forecasting value in initial dimension)
+        
+        Parameters
+        ----------
+        new_value : float
+            New value in differentiated series
+        
+        Returns
+        -------
+        Integrated value, float
+       """
         self.new_value=new_value
         self.Sum_insstead_Minuend[len(self.seasons)]=self.new_value
         for i in range(len(self.seasons)-1,-1,-1):

@@ -1,17 +1,50 @@
 from statsmodels.tsa.arima_model import ARMA
-from statsmodels.stats.diagnostic import het_arch
 import numpy as np
-from numpy import linalg
 import pandas as pd
-from sympy import diff, symbols, sympify, Symbol, poly
-from sklearn.metrics import mean_absolute_error
 from statsmodels.tsa.ar_model import AR
 import statsmodels.api as sm
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from time import time
 
 class find_best_model:
     def __init__(self,data,max_ar,max_ma,verbose=True,find_online_ar=True,criterion='mae'):
+        """
+        Find best order of  ARMA model, and/or substitute for ARMA model based on autoregression model.
+
+        Parameters
+        ----------
+        data : array-like, shape (n_samples,)
+            Training data, where n_samples is the number of samples
+
+        max_ar : int,
+            Maximum considered order of autoregression model for ARMA
+        
+        max_ma : int,
+            Maximum considered order of moving average model for ARMA
+            
+        verbose, optional (default=True)
+            Show results in detail
+        
+        find_online_ar, optional (default=True)
+            Show results in detail
+            
+        criterion= srt, 'mae', 'aic', 'bic' (default='mae')
+            Find best model from point of view specific criterion
+            'mae' - mean absolute error
+            'aic' - akaike information criterion
+            'bic' - bayesian information criterion
+
+        Attributes
+        -------
+        self.best_model : tuple, shape (2)
+            Tuple of best AR and MA order
+        self.best_model_ar : float
+            Best substitute of ARMA model 
+        
+        
+        Returns
+        -------
+        self : objec
+        """
 
         if type(max_ar) == int:
             # издержки питона
@@ -86,12 +119,6 @@ class find_best_model:
             
         print('WE CHOOSE THE BEST MODEL IS:',self.best_model[0],self.best_model[1])
 
-            # приблизительный метод из статьи на замене q на m
-#             number=1/het_arch(np.nanmin(table_mae.values))[0]
-#             base=1/(ma_mae)
-#             m = math.log(number, base)
-
-        # tatsmodels.tsa.arima_process.arma2ma(ar, ma, lags=100, **kwargs)[source]
         # эвристичечкий метод имени Славы
         if find_online_ar:
             err=np.nanmin(np.nanmin(table_mae.values))
