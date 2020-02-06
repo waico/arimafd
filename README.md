@@ -1,7 +1,3 @@
-# Outliers detection with arima!
-
-  - Add some features later
-  
 # About arimafd
 
 
@@ -34,6 +30,5 @@ https://pypi.org/project/arimafd/
 
 
 # License
-=======
 
-Modified BSD (3-clause)
+MIT
