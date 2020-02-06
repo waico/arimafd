@@ -13,9 +13,9 @@ of faults in technical systems.
 
 - Differentiation and integration of series including seasonal components
 - Finding best hyperparametrs for ARIMA model
-- online forecasting based on ARIMA model
-- anomaly detection 
-- evaluating score of anomaly detection algorithms
+- Online forecasting based on ARIMA model
+- Anomaly detection 
+- Evaluating score of anomaly detection algorithms
 
 # How to get it
 The master branch on GitHub 
