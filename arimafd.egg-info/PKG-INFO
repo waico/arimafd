@@ -1,13 +1,45 @@
 Metadata-Version: 2.1
 Name: arimafd
-Version: 0.19
+Version: 0.20
 Summary: Build librarry
 Home-page: https://github.com/waico/arimafd
 Author: Vyacheslav Kozitsin, Iurii Katser
 Author-email: waico@waico.ru
 License: MIT
-Description: # Outliers detection with arima!
+Description: # About arimafd
         
-          - Add some features later
+        
+        Arimafd is a Python package that provides algorithms
+        for online prediction and anomaly detection. One of the
+        applications of this package can be the early detection
+        of faults in technical systems.
+        
+        
+        
+        # Main Features
+        
+        
+        - Differentiation and integration of series including seasonal components
+        - Finding best hyperparametrs for ARIMA model
+        - Online forecasting based on ARIMA model
+        - Anomaly detection 
+        - Evaluating score of anomaly detection algorithms
+        
+        # How to get it
+        The master branch on GitHub 
+        
+        https://github.com/waico/arimafd
+        
+        
+        Binaries and source distributions are available from PyPi
+        
+        https://pypi.org/project/arimafd/
+        
+        
+        
+        # License
+        
+        MIT
+        
 Platform: UNKNOWN
 Description-Content-Type: text/x-rst
