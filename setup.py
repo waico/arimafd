@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
  
 setup(name='arimafd',
-      version='0.20',
+      version='1.00',
       url='https://github.com/waico/arimafd',
       license='MIT',
       #packages=find_packages(),

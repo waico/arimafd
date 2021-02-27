@@ -279,7 +279,7 @@ class anomaly_detection:
         self.tensor = tensor
         return tensor
 
-    def proc_tensor(self,window=100,No_metric=1):
+    def proc_tensor(self,window=100,No_metric=1,window_insensitivity=100):
         """
         Processing tensor of weights and calcute metric
         and binary labels  
@@ -290,6 +290,12 @@ class anomaly_detection:
             Time window for calculating metric.
             It will be better if it is equal to 
             half the width of the physical process.
+            
+        window_insensitivity : int (default=100)
+            Аfter the new detected changepoint,
+            the following 'window_insensitivity' points 
+            is guaranteed not to be changepoints.
+            
             
 
         Returns
@@ -340,6 +346,10 @@ class anomaly_detection:
                 mean = np.array(df[i:i+window].mean(axis=0)).reshape(1,-1)
                 x = np.array(df.iloc[i]).reshape(1,-1)
                 metric.iloc[i]=np.dot(np.dot((x-mean),cov),(x-mean).T)
+        elif No_metric == 6:
+            koef = 3
+            metric = df.rolling(window).apply(lambda x: int(  np.abs( (x.values[-1]-np.mean(x))/np.std(x) > koef*np.std(x) ))).sum(axis=1)
+        
         
             
 #             print('Metric2')
@@ -350,7 +360,7 @@ class anomaly_detection:
         self.lcl = lcl            
         bin_metric = ((metric > ucl) | (metric < lcl)).astype(int)
         # filtering atreh him, after 1 all 100 digits will be zero 
-        winn = 100
+        winn = window_insensitivity
         for i in range(len(bin_metric)-winn):
             if ((bin_metric.iloc[i] == 1.0) & (bin_metric[i:i+winn].sum()>1.0)):
                 bin_metric[i+1:i+winn]=np.zeros(winn-1)
@@ -413,28 +423,124 @@ class anomaly_detection:
                 score += bin_metric.sum()*A_fp
             #second part
             for i in range(len(alist)):
-                if i==len(alist)-2:
-                    win1 = bin_metric[alist[i][0]:alist[i+1][0]].copy()
+                if i<=len(alist)-2:
+                    win_space = bin_metric[alist[i][0]:alist[i+1][0]].copy()
                 else:
-                    win1 = bin_metric[alist[i][0]:].copy()                    
-                len_win2 = len(bin_metric[alist[i][0]:alist[i][1]] )                   
-#                 win2 = bin_metric[alist[i][0]:alist[i][1]].copy()
-                # учет первой точки в окне, остальные стираем
-                self.win1 = win1
-#                 self.win2 = win2
-
-                if win1.sum() == 0.0:
-                    score += A_fn
+                    win_space = bin_metric[alist[i][0]:].copy()
+                win_fault = bin_metric[alist[i][0]:alist[i][1]]
+                slow_width = int(len(win_fault)/4)
+                
+                if len(win_fault) + slow_width >= len(win_space):
+#                    не совсем так правильно лелать
+                    print('большая ширина плавного переходы сигмойды')
+                    win_fault_slow = win_fault.copy()
                 else:
-                    new_curve = sigm_scale(np.array(range(-len_win2,len(win1)-len_win2)), A_tp,A_fp,int(len_win2/4))
-                    if win1[:len_win2].sum()>1:
-                        win1[:len_win2][win1[:len_win2] == 1][1:] = np.zeros(int(win1[:len_win2].sum())-1)
-                    score+=(new_curve*win1).sum()
+                    win_fault_slow= win_space[:len(win_fault)  +  slow_width]
+                
+                win_fp = win_space[-len(win_fault_slow):]
+                
+                if win_fault_slow.sum() == 0:
+                    score+=A_fn
+                else:
+                    #берем первый индекс
+                    tr = pd.Series(win_fault_slow.values,index = range(-len(win_fault),len(win_fault_slow)-len(win_fault)))
+                    tr_values= tr[tr==1].index[0]
+                    tr_score = sigm_scale(tr_values, A_tp,A_fp,slow_width)
+                    score += tr_score
+                    score += win_fp.sum()*A_fp
             Scores.append(score)
             Scores_perfect.append(len(alist)*A_tp)
             Scores_null.append(len(alist)*A_fn)
         self.Scores,self.Scores_null,self.Scores_perfect = np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
         return np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
+
+
+    def evaluate_nab(self,anomaly_list,table_of_coef=None):
+        """
+        Scoring labeled time series by means of
+        Numenta Anomaly Benchmark methodics
+
+        Parameters
+        ----------
+        anomaly_list: list of list of two float values
+            The list of lists of left and right boundary indices
+            for scoring results of labeling
+        table_of_coef: pandas array (3x4) of float values
+            Table of coefficients for NAB score function
+            indeces: 'Standart','LowFP','LowFN'
+            columns:'A_tp','A_fp','A_tn','A_fn'
+            
+
+        Returns
+        -------
+        Scores: numpy array, shape of 3, float
+            Score for 'Standart','LowFP','LowFN' profile 
+        Scores_null: numpy array, shape 3, float
+            Null score for 'Standart','LowFP','LowFN' profile             
+        Scores_perfect: numpy array, shape 3, float
+            Perfect Score for 'Standart','LowFP','LowFN' profile  
+        """
+        if table_of_coef is None:
+            table_of_coef = pd.DataFrame([[1.0,-0.11,1.0,-1.0],
+                                 [1.0,-0.22,1.0,-1.0],
+                                  [1.0,-0.11,1.0,-2.0]])
+            table_of_coef.index = ['Standart','LowFP','LowFN']
+            table_of_coef.index.name = "Metric"
+            table_of_coef.columns = ['A_tp','A_fp','A_tn','A_fn']
+
+        alist = anomaly_list.copy()
+        bin_metric = self.bin_metric.copy()
+        
+#         bin_metric = bin_metric.reset_index().drop_duplicates().set_index(bin_metric.index.name)
+        Scores,Scores_perfect,Scores_null=[],[],[]
+        for profile in ['Standart','LowFP','LowFN']:       
+            A_tp = table_of_coef['A_tp'][profile]
+            A_fp = table_of_coef['A_fp'][profile]
+            A_fn = table_of_coef['A_fn'][profile]
+            #TODO make 10% window if not known boundary
+            #if len(list(al.values())[0])
+            def sigm_scale(y,A_tp,A_fp,window=1):
+                return (A_tp-A_fp)*(1/(1+np.exp(5*y/window))) + A_fp
+
+            #First part
+            score = 0
+            if len(alist)>0:
+                score += bin_metric[:alist[0][0]].sum()*A_fp
+            else:
+                score += bin_metric.sum()*A_fp
+            #second part
+            for i in range(len(alist)):
+                if i<=len(alist)-2:
+                    win_space = bin_metric[alist[i][0]:alist[i+1][0]].copy()
+                else:
+                    win_space = bin_metric[alist[i][0]:].copy()
+                win_fault = bin_metric[alist[i][0]:alist[i][1]]
+                slow_width = int(len(win_fault)/4)
+                
+                if len(win_fault) + slow_width >= len(win_space):
+#                    не совсем так правильно лелать
+                    print('большая ширина плавного переходы сигмойды')
+                    win_fault_slow = win_fault.copy()
+                else:
+                    win_fault_slow= win_space[:len(win_fault)  +  slow_width]
+                
+                win_fp = win_space[-len(win_fault_slow):]
+                
+                if win_fault_slow.sum() == 0:
+                    score+=A_fn
+                else:
+                    #берем первый индекс
+                    tr = pd.Series(win_fault_slow.values,index = range(-len(win_fault),len(win_fault_slow)-len(win_fault)))
+                    tr_values= tr[tr==1].index[0]
+                    tr_score = sigm_scale(tr_values, A_tp,A_fp,slow_width)
+                    score += tr_score
+                    score += win_fp.sum()*A_fp
+            Scores.append(score)
+            Scores_perfect.append(len(alist)*A_tp)
+            Scores_null.append(len(alist)*A_fn)
+        self.Scores,self.Scores_null,self.Scores_perfect = np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
+        return np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
+                
         
 def get_score(list_metrics):
     """
