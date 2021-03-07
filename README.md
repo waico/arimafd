@@ -1,3 +1,5 @@
+[![Downloads](https://pepy.tech/badge/arimafd)](https://pepy.tech/project/arimafd) [![Downloads](https://pepy.tech/badge/arimafd/month)](https://pepy.tech/project/arimafd) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/waico/arimafd/blob/master/LICENSE.txt)
+
 # About arimafd
 
 
