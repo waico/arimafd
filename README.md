@@ -1,4 +1,4 @@
-[![Downloads](https://pepy.tech/badge/arimafd)](https://pepy.tech/project/arimafd) [![Downloads](https://pepy.tech/badge/arimafd/month)](https://pepy.tech/project/arimafd) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/waico/arimafd/blob/master/LICENSE.txt)
+[![Downloads](https://pepy.tech/badge/arimafd)](https://pepy.tech/project/arimafd) [![Downloads](https://pepy.tech/badge/arimafd/month)](https://pepy.tech/project/arimafd) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/waico/arimafd/blob/master/LICENSE.txt) [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/online-forecasting-and-anomaly-detection/anomaly-detection-on-numenta-anomaly)](https://paperswithcode.com/sota/anomaly-detection-on-numenta-anomaly?p=online-forecasting-and-anomaly-detection)
 
 # About arimafd
 
