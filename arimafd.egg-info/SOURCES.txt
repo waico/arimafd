@@ -3,6 +3,7 @@ setup.py
 arimafd/__init__.py
 arimafd/diff_integ.py
 arimafd/find_best_model.py
+arimafd/main.py
 arimafd/tanh.py
 arimafd.egg-info/PKG-INFO
 arimafd.egg-info/SOURCES.txt

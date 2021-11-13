@@ -195,12 +195,31 @@ class online_tanh:
 
 
 
-class anomaly_detection:
+class Anomaly_detection:
+    """
+    This class for anomaly detection application of modernized ARIMA model
+    
+    Examples:
+    ----------
+   
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> import arimafd as oa
+    >>> my_array = np.random.normal(size=1000) # init array
+    >>> my_array[-3] = 1000 # init anomaly
+    >>> ts = pd.DataFrame(my_array,
+    >>>                   index=pd.date_range(start='01-01-2000',
+    >>>                                       periods=1000,
+    >>>                                       freq='H'))
+    >>> ad = oa.anomaly_detection(ts) #init anomaly detection algorithm
+    >>> ad.generate_tensor(ar_order=3) #it compute weights of ARIMA on history 
+    >>> ts_anomaly = ad.proc_tensor() #processing of weights. 
+    >>> ts_anomaly
+    """
 
     def __init__(self,data):
         """
-        Thic class for anomaly detection aplication of modernized ARIMA model
-        
+       
         Parameters
         ----------
         data: pandas array, float
@@ -210,14 +229,6 @@ class anomaly_detection:
         -------
         self : object
         
-        Examples
-        --------
-        >>> import arimafd as oa
-        >>> my_array=pd.DataFrame([1,2,3,4,5])
-        >>> ad = oa.anomaly_detection(my_array)
-        >>> ad.generate_tensor()
-        >>> ad.proc_tensor()
-        >>> ad.evaluate_nab([[1,3]])
         """
         self.indices = data.index
         self.data = data
@@ -225,7 +236,7 @@ class anomaly_detection:
 
 
 
-    def generate_tensor(self,ar_order=None):
+    def generate_tensor(self,ar_order=None,verbose=True):
         """
         Generation tensor of weights for outlier detection
 
@@ -255,25 +266,32 @@ class anomaly_detection:
 
         if ar_order is None:
             ar_order=int(len(data)/5)
+        self.ar_order = ar_order
 
-        ss = StandardScaler()
-        mms = MinMaxScaler()
-
-        data=ss.fit_transform(data.copy())
+        self.ss = StandardScaler()
+        #mms = MinMaxScaler()
+        
+        data=self.ss.fit_transform(data.copy())
 
         tensor = np.zeros((data.shape[0]-ar_order,data.shape[1],ar_order+1))
         j=0
+        self.models = []
+        self.diffrs = []
         for i in range(data.shape[1]):
             t1=time()
             kkk=0
 
             diffr=diff_integ([1])
             dif = diffr.fit_transform(data[:,i])
-
+            self.diffrs.append(diffr)
+            
             model=online_tanh(ar_order)
             model.fit(dif)
+            
+            self.models.append(model)
             t2=time()
-            print('Time seconds:', t2-t1)
+            if verbose:
+                print('Time seconds:', t2-t1)
 
             tensor[:,i,:] = model.dif_w.values
         self.tensor = tensor
@@ -368,188 +386,4 @@ class anomaly_detection:
         return bin_metric
 
 
-    def evaluate_nab(self,anomaly_list,table_of_coef=None):
-        """
-        Scoring labeled time series by means of
-        Numenta Anomaly Benchmark methodics
-
-        Parameters
-        ----------
-        anomaly_list: list of list of two float values
-            The list of lists of left and right boundary indices
-            for scoring results of labeling
-        table_of_coef: pandas array (3x4) of float values
-            Table of coefficients for NAB score function
-            indeces: 'Standart','LowFP','LowFN'
-            columns:'A_tp','A_fp','A_tn','A_fn'
-            
-
-        Returns
-        -------
-        Scores: numpy array, shape of 3, float
-            Score for 'Standart','LowFP','LowFN' profile 
-        Scores_null: numpy array, shape 3, float
-            Null score for 'Standart','LowFP','LowFN' profile             
-        Scores_perfect: numpy array, shape 3, float
-            Perfect Score for 'Standart','LowFP','LowFN' profile  
-        """
-        if table_of_coef is None:
-            table_of_coef = pd.DataFrame([[1.0,-0.11,1.0,-1.0],
-                                 [1.0,-0.22,1.0,-1.0],
-                                  [1.0,-0.11,1.0,-2.0]])
-            table_of_coef.index = ['Standart','LowFP','LowFN']
-            table_of_coef.index.name = "Metric"
-            table_of_coef.columns = ['A_tp','A_fp','A_tn','A_fn']
-
-        alist = anomaly_list.copy()
-        bin_metric = self.bin_metric.copy()
-        
-#         bin_metric = bin_metric.reset_index().drop_duplicates().set_index(bin_metric.index.name)
-        Scores,Scores_perfect,Scores_null=[],[],[]
-        for profile in ['Standart','LowFP','LowFN']:       
-            A_tp = table_of_coef['A_tp'][profile]
-            A_fp = table_of_coef['A_fp'][profile]
-            A_fn = table_of_coef['A_fn'][profile]
-            #TODO make 10% window if not known boundary
-            #if len(list(al.values())[0])
-            def sigm_scale(y,A_tp,A_fp,window=1):
-                return (A_tp-A_fp)*(1/(1+np.exp(5*y/window))) + A_fp
-
-            #First part
-            score = 0
-            if len(alist)>0:
-                score += bin_metric[:alist[0][0]].sum()*A_fp
-            else:
-                score += bin_metric.sum()*A_fp
-            #second part
-            for i in range(len(alist)):
-                if i<=len(alist)-2:
-                    win_space = bin_metric[alist[i][0]:alist[i+1][0]].copy()
-                else:
-                    win_space = bin_metric[alist[i][0]:].copy()
-                win_fault = bin_metric[alist[i][0]:alist[i][1]]
-                slow_width = int(len(win_fault)/4)
-                
-                if len(win_fault) + slow_width >= len(win_space):
-#                    не совсем так правильно лелать
-                    print('большая ширина плавного переходы сигмойды')
-                    win_fault_slow = win_fault.copy()
-                else:
-                    win_fault_slow= win_space[:len(win_fault)  +  slow_width]
-                
-                win_fp = win_space[-len(win_fault_slow):]
-                
-                if win_fault_slow.sum() == 0:
-                    score+=A_fn
-                else:
-                    #берем первый индекс
-                    tr = pd.Series(win_fault_slow.values,index = range(-len(win_fault),len(win_fault_slow)-len(win_fault)))
-                    tr_values= tr[tr==1].index[0]
-                    tr_score = sigm_scale(tr_values, A_tp,A_fp,slow_width)
-                    score += tr_score
-                    score += win_fp.sum()*A_fp
-            Scores.append(score)
-            Scores_perfect.append(len(alist)*A_tp)
-            Scores_null.append(len(alist)*A_fn)
-        self.Scores,self.Scores_null,self.Scores_perfect = np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
-        return np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
-
-
-    def evaluate_nab(self,anomaly_list,table_of_coef=None):
-        """
-        Scoring labeled time series by means of
-        Numenta Anomaly Benchmark methodics
-
-        Parameters
-        ----------
-        anomaly_list: list of list of two float values
-            The list of lists of left and right boundary indices
-            for scoring results of labeling
-        table_of_coef: pandas array (3x4) of float values
-            Table of coefficients for NAB score function
-            indeces: 'Standart','LowFP','LowFN'
-            columns:'A_tp','A_fp','A_tn','A_fn'
-            
-
-        Returns
-        -------
-        Scores: numpy array, shape of 3, float
-            Score for 'Standart','LowFP','LowFN' profile 
-        Scores_null: numpy array, shape 3, float
-            Null score for 'Standart','LowFP','LowFN' profile             
-        Scores_perfect: numpy array, shape 3, float
-            Perfect Score for 'Standart','LowFP','LowFN' profile  
-        """
-        if table_of_coef is None:
-            table_of_coef = pd.DataFrame([[1.0,-0.11,1.0,-1.0],
-                                 [1.0,-0.22,1.0,-1.0],
-                                  [1.0,-0.11,1.0,-2.0]])
-            table_of_coef.index = ['Standart','LowFP','LowFN']
-            table_of_coef.index.name = "Metric"
-            table_of_coef.columns = ['A_tp','A_fp','A_tn','A_fn']
-
-        alist = anomaly_list.copy()
-        bin_metric = self.bin_metric.copy()
-        
-#         bin_metric = bin_metric.reset_index().drop_duplicates().set_index(bin_metric.index.name)
-        Scores,Scores_perfect,Scores_null=[],[],[]
-        for profile in ['Standart','LowFP','LowFN']:       
-            A_tp = table_of_coef['A_tp'][profile]
-            A_fp = table_of_coef['A_fp'][profile]
-            A_fn = table_of_coef['A_fn'][profile]
-            #TODO make 10% window if not known boundary
-            #if len(list(al.values())[0])
-            def sigm_scale(y,A_tp,A_fp,window=1):
-                return (A_tp-A_fp)*(1/(1+np.exp(5*y/window))) + A_fp
-
-            #First part
-            score = 0
-            if len(alist)>0:
-                score += bin_metric[:alist[0][0]].sum()*A_fp
-            else:
-                score += bin_metric.sum()*A_fp
-            #second part
-            for i in range(len(alist)):
-                if i<=len(alist)-2:
-                    win_space = bin_metric[alist[i][0]:alist[i+1][0]].copy()
-                else:
-                    win_space = bin_metric[alist[i][0]:].copy()
-                win_fault = bin_metric[alist[i][0]:alist[i][1]]
-                slow_width = int(len(win_fault)/4)
-                
-                if len(win_fault) + slow_width >= len(win_space):
-#                    не совсем так правильно лелать
-                    print('большая ширина плавного переходы сигмойды')
-                    win_fault_slow = win_fault.copy()
-                else:
-                    win_fault_slow= win_space[:len(win_fault)  +  slow_width]
-                
-                win_fp = win_space[-len(win_fault_slow):]
-                
-                if win_fault_slow.sum() == 0:
-                    score+=A_fn
-                else:
-                    #берем первый индекс
-                    tr = pd.Series(win_fault_slow.values,index = range(-len(win_fault),len(win_fault_slow)-len(win_fault)))
-                    tr_values= tr[tr==1].index[0]
-                    tr_score = sigm_scale(tr_values, A_tp,A_fp,slow_width)
-                    score += tr_score
-                    score += win_fp.sum()*A_fp
-            Scores.append(score)
-            Scores_perfect.append(len(alist)*A_tp)
-            Scores_null.append(len(alist)*A_fn)
-        self.Scores,self.Scores_null,self.Scores_perfect = np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
-        return np.array(Scores), np.array(Scores_null) ,np.array(Scores_perfect)
-                
-        
-def get_score(list_metrics):
-    """
-    Get full score for algorithm
-    from several datasets
-    """
-    sum1 = np.zeros((3,3))
-    for i in range(len(list_metrics)):
-        sum1 += list_metrics[i]
-    desc = ['Standart','LowFP','LowFN']    
-    for t in range(3):
-        print(desc[t],' - ', 100*(sum1[0,t]-sum1[1,t])/(sum1[2,t]-sum1[1,t]))
+    

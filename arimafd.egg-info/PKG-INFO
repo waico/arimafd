@@ -1,13 +1,12 @@
-Metadata-Version: 2.1
+Metadata-Version: 1.0
 Name: arimafd
-Version: 1.0
+Version: 1.4
 Summary: Build librarry
 Home-page: https://github.com/waico/arimafd
 Author: Vyacheslav Kozitsin, Iurii Katser
 Author-email: waico@waico.ru
 License: MIT
 Description: # About arimafd
-        
         
         Arimafd is a Python package that provides algorithms
         for online prediction and anomaly detection. One of the
@@ -35,11 +34,14 @@ Description: # About arimafd
         
         https://pypi.org/project/arimafd/
         
+        # Get started
         
+        **Installation** through [PyPi](https://pypi.org/project/tsad): 
+        
+        `pip install -U arimafd`
         
         # License
         
         MIT
         
 Platform: UNKNOWN
-Description-Content-Type: text/x-rst
