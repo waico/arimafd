@@ -34,7 +34,7 @@ https://pypi.org/project/arimafd/
 
 `pip install -U arimafd`
 
-1. Example
+1. Example #1
 
 ```python
 import pandas as pd
@@ -47,23 +47,29 @@ ts = pd.DataFrame(my_array,
                   index=pd.date_range(start='01-01-2000',
                                       periods=1000,
                                       freq='H'))
-ad = oa.anomaly_detection(ts) #init anomaly detection algorithm
-ad.generate_tensor(ar_order=3) #it compute weights of ARIMA on history 
-ts_anomaly = ad.proc_tensor() #processing of weights. 
-# ad.ebeluate_nab() # function for evaluating results of algorithms
+
+my_arima = oa.Arima_anomaly_detection(ar_order=3)
+my_arima.fit(ts[:500])
+ts_anomaly = my_arima.predict(ts[500:])
+
+
+# or you can use for streaming:
+# bin_metric = []
+# for i in range(len(df)):
+#     bin_metric.append(my_arima.predict(df[i:i+1]))
+# bin_metric = pd.concat(bin_metric)
+# bin_metric
 ts_anomaly
 ```
-
-Actually, labeling time series on anomaly and not an anomaly have already been performed by proc_tensor function (it returns labeled time series, where 1 is an anomaly, 0 - not anomaly). 
 
 [Output]:
 
 ```python
-2000-01-01 03:00:00    0
-2000-01-01 04:00:00    0
-2000-01-01 05:00:00    0
-2000-01-01 06:00:00    0
-2000-01-01 07:00:00    0
+2000-01-21 20:00:00    0
+2000-01-21 21:00:00    0
+2000-01-21 22:00:00    0
+2000-01-21 23:00:00    0
+2000-01-22 00:00:00    0
                       ..
 2000-02-11 11:00:00    0
 2000-02-11 12:00:00    0
@@ -72,6 +78,31 @@ Actually, labeling time series on anomaly and not an anomaly have already been p
 2000-02-11 15:00:00    1
 Freq: H, Length: 997, dtype: int32
 ```
+
+Actually, labeling time series on anomaly and not an anomaly have already been performed by proc_tensor function (it returns labeled time series, where 1 is an anomaly, 0 - not anomaly). 
+
+For evaluating results you can use https://tsad.readthedocs.io/en/latest/Evaluating.html 
+
+1. Example #2
+
+```python
+import pandas as pd
+import numpy as np
+import arimafd as oa
+
+my_array = np.random.normal(size=1000) # init array
+my_array[-3] = 1000 # init anomaly
+ts = pd.DataFrame(my_array,
+                  index=pd.date_range(start='01-01-2000',
+                                      periods=1000,
+                                      freq='H'))
+ad = oa.Anomaly_detection(ts) #init anomaly detection algorithm
+ad.generate_tensor(ar_order=3) #it compute weights of ARIMA on history 
+ts_anomaly = ad.proc_tensor() #processing of weights. 
+ts_anomaly
+```
+
+
 
 
 
