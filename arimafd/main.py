@@ -11,19 +11,21 @@ from .tanh import Anomaly_detection
 class Arima_anomaly_detection(Anomaly_detection):
         """
         Thic class for anomaly detection application of modernized ARIMA model
-        
-        Returns
-        -------
-        self : object
-        
+
         Examples
         --------
+        >>> import pandas as pd
+        >>> import numpy as np
         >>> import arimafd as oa
-        >>> my_array=pd.DataFrame([1,2,3,4,5])
-        >>> ad = Anomaly_detection(my_array)
-        >>> ad.generate_tensor()
-        >>> ad.proc_tensor()
-        >>> ad.evaluate_nab([[1,3]])
+        >>> my_array = np.random.normal(size=1000) # init array
+        >>> my_array[-3] = 1000 # init anomaly
+        >>> ts = pd.DataFrame(my_array,
+        >>>                   index=pd.date_range(start='01-01-2000',
+        >>>                                       periods=1000,
+        >>>                                       freq='H'))
+        >>> my_arima = oa.Arima_anomaly_detection(ar_order=3)
+        >>> my_arima.fit(ts[:500])
+        >>> my_arima.predict(ts[500:])
         """
         
         def __init__(self,ar_order=None):
@@ -43,50 +45,44 @@ class Arima_anomaly_detection(Anomaly_detection):
                 No_metric=1,
                 window_insensitivity=100):
                 
-                """
-                Fit ARIMA Anomaly detection
+            """
+            Fit ARIMA Anomaly detection
+            
+            Parameters
+            ----------
+            history_dataset: pd.Series or pd.DataFrame
+                The researched time series or sequences array. 
+                Desire: dataset without anomalies for computing 
+                appropriate weights.  
                 
+            window : int (default=100)
+                Time window for calculating metric.
+                It will be better if it is equal to 
+                half the width of the physical process.
                 
+            window_insensitivity : int (default=100)
+                Аfter the new detected changepoint,
+                the following 'window_insensitivity' points 
+                is guaranteed not to be changepoints.
                 
-                 Parameters
-                ----------
-                
-                Parameters
-                ----------
-                data: pd.Series or pd.DataFrame
-                    The researched time series or sequences array. 
-                    Desire: dataset without anomalies for computing 
-                    appropriate weights.  
-                    
-                window : int (default=100)
-                    Time window for calculating metric.
-                    It will be better if it is equal to 
-                    half the width of the physical process.
-                    
-                window_insensitivity : int (default=100)
-                    Аfter the new detected changepoint,
-                    the following 'window_insensitivity' points 
-                    is guaranteed not to be changepoints.
-                    
-                    
+              
+            Returns
+            -------
+            bin_metric: pandas array, shape (n_samples), float
+                Labeled pandas series, where value 1 is the anomaly,
+                0 is not the anomaly.
 
-                Returns
-                -------
-                bin_metric: pandas array, shape (n_samples), float
-                    Labeled pandas series, where value 1 is the anomaly,
-                    0 is not the anomaly.
-
-                
-                Attributes
-                -------
-                self.metric: pandas array, shape (n_samples), float
-                    calculated metric for data
-                self.ucl: float, upper control limit for self.metric
-                self.lcl: float, lower control limit for self.metric
-                self.bin_metric: pandas array, shape (n_samples), float
-                    Labeled pandas series, where value 1 is the anomaly,
-                    0 is not the anomaly.               
-                """
+            
+            Attributes
+            -------
+            self.metric: pandas array, shape (n_samples), float
+                calculated metric for data
+            self.ucl: float, upper control limit for self.metric
+            self.lcl: float, lower control limit for self.metric
+            self.bin_metric: pandas array, shape (n_samples), float
+                Labeled pandas series, where value 1 is the anomaly,
+                0 is not the anomaly.               
+            """
                 
             if max([window,window_insensitivity]) >= len(history_dataset):
                 print("Width of window is grater then len(data), Use batch")
@@ -102,6 +98,34 @@ class Arima_anomaly_detection(Anomaly_detection):
                         window=100,
                         No_metric=1,
                         window_insensitivity=100):
+                        
+            """
+            Predicts anomalies by ARIMA
+            
+            Parameters
+            ----------
+            data: pd.Series or pd.DataFrame
+                The researched time series or sequences array
+                
+            window : int (default=100)
+                Time window for calculating metric.
+                It will be better if it is equal to 
+                half the width of the physical process.
+                
+            window_insensitivity : int (default=100)
+                Аfter the new detected changepoint,
+                the following 'window_insensitivity' points 
+                is guaranteed not to be changepoints.
+                
+              
+            Returns
+            -------
+            bin_metric: pandas array, shape (n_samples), float
+                Labeled pandas series, where value 1 is the anomaly,
+                0 is not the anomaly.
+
+                        
+            """
                         
             if max([window,window_insensitivity]) >= len(data):
                 print("Width of window is grater then len(data), Use batch")
