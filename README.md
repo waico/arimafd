@@ -11,7 +11,6 @@ of faults in technical systems.
 
 # Main Features
 
-
 - Differentiation and integration of series including seasonal components
 - Finding best hyperparametrs for ARIMA model
 - Online forecasting based on ARIMA model
@@ -19,22 +18,18 @@ of faults in technical systems.
 - Evaluating score of anomaly detection algorithms
 
 # How to get it
-The master branch on GitHub 
-
+- The master branch on GitHub:  
 https://github.com/waico/arimafd
 
-
-Binaries and source distributions are available from PyPi
-
+- Binaries and source distributions are available from PyPi:  
 https://pypi.org/project/arimafd/
+
+- **Installation** through [PyPi](https://pypi.org/project/arimafd):  
+`pip install -U arimafd`
 
 # Get started
 
-**Installation** through [PyPi](https://pypi.org/project/tsad): 
-
-`pip install -U arimafd`
-
-1. Example #1
+### Example #1
 
 ```python
 import pandas as pd
@@ -83,7 +78,7 @@ Actually, labeling time series on anomaly and not an anomaly have already been p
 
 For evaluating results you can use https://tsad.readthedocs.io/en/latest/Evaluating.html 
 
-1. Example #2
+### Example #2
 
 ```python
 import pandas as pd
@@ -101,10 +96,6 @@ ad.generate_tensor(ar_order=3) #it compute weights of ARIMA on history
 ts_anomaly = ad.proc_tensor() #processing of weights. 
 ts_anomaly
 ```
-
-
-
-
 
 # License
 
