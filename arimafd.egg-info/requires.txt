@@ -1,5 +1,5 @@
 numpy
 pandas
 sympy
-sklearn
+scikit-learn
 statsmodels
