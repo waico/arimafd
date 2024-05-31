@@ -12,5 +12,5 @@ setup(name='arimafd',
       #packages=find_packages(exclude=['tests']),
       long_description=open('./arimafd/README.md').read(),
       #long_description_content_type='text/x-rst',
-      install_requires=['numpy','pandas','sympy','sklearn','statsmodels'], # install_requires=[ 'A>=1,<2', 'B>=2']
+      install_requires=['numpy','pandas','sympy','scikit-learn','statsmodels'], # install_requires=[ 'A>=1,<2', 'B>=2']
       zip_safe=False)
