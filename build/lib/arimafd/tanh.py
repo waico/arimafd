@@ -137,8 +137,8 @@ class online_tanh:
             
             if self.project:
                 self.w = projection(self.w)
-            self.ww=self.ww.append([self.w], ignore_index=True)
-            self.dif_w = self.dif_w.append([self.diff], ignore_index=True)
+            self.ww = pd.concat([self.ww, pd.DataFrame([self.w])], ignore_index=True)
+            self.dif_w = pd.concat([self.dif_w, pd.DataFrame([self.diff])], ignore_index=True)
         self.iii=i
         # реальные предсказания 
         # это нужно для дальнейшей работы алгоритма: 1 точка
@@ -175,10 +175,10 @@ class online_tanh:
             if self.project:
                 self.w = projection(self.w)
             
-            self.ww=self.ww.append([self.w], ignore_index=True)
+            self.ww = pd.concat([self.ww, pd.DataFrame([self.w])], ignore_index=True)
             
             self.pred=np.append(self.pred,np.nan)
-            self.dif_w = self.dif_w.append([self.diff], ignore_index=True)
+            self.dif_w = pd.concat([self.dif_w, pd.DataFrame([self.diff])], ignore_index=True)
             self.pred[-1]=self.w[:-1] @ self.data[-self.order:] + self.w[-1]
 
             
