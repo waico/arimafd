@@ -33,7 +33,7 @@ def projection(w,circle=1.01):
             whole *=(x-root)
     #     print('f(x) =',whole.expand())
         p = poly(whole, x)
-        return np.array(p.all_coeffs()).astype(float)
+        return np.array([*map(lambda x: x.real, p.all_coefs())]).astype(float)
     
     roots = np.roots(w)
     l1 = linalg.norm(roots)
